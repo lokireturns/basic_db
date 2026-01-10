@@ -72,12 +72,35 @@ MetaCommandResult do_meta_command(InputBuffer * input_buffer) {
 }
 
 // Our proverbial SQL compiler
+PrepareResult prepare_statement(InputBuffer * input_buffer, Statement * statement) {
+  // Using strncmp as insert will be followed by data
+  if(strncmp(input_buffer->buffer, "insert", 6)) {
+    statement->type = STATEMENT_INSERT;
+    return PREPARE_SUCCESS;
+  }
+  if(strcmp(input_buffer->buffer, "select")) {
+    statement->type = STATEMENT_SELECT;
+    return PREPARE_SUCCESS;
+  }
+  
+  return PREPARE_UNRECOGNISED_STATEMENT;
+}
 
+void execute_statement(Statement * statement) {
+  switch(statement->type){
+    case (STATEMENT_INSERT):
+      printf("This is where we do an insert");
+      break;
+    case (STATEMENT_SELECT):
+      printf("This is where we do a select");
+  }
+}
 
 int main(int argc, char *argv[])
 {
   InputBuffer *input_buffer = newInputBuffer();
 
+  // REPL
   while (true)
   {
     print_prompt();
@@ -94,7 +117,7 @@ int main(int argc, char *argv[])
     }
 
     Statement statement;
-    switch (prepare_statement(input_buffer->buffer, &statement)) {
+    switch (prepare_statement(input_buffer, &statement)) {
       case (PREPARE_SUCCESS):
         break;
       case (PREPARE_UNRECOGNISED_STATEMENT):
