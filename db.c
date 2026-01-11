@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "page.h"
 
 typedef struct
 {
@@ -44,55 +45,75 @@ void close_input_buffer(InputBuffer *input_buffer)
   free(input_buffer);
 }
 
-typedef enum {
+typedef enum
+{
   META_COMMAND_SUCCESS,
   META_COMMAND_UNRECOGNIZED_COMMAND
 } MetaCommandResult;
 
-typedef enum {
+typedef enum
+{
   PREPARE_SUCCESS,
-  PREPARE_UNRECOGNISED_STATEMENT
+  PREPARE_UNRECOGNISED_STATEMENT,
+  PREPARE_SYNTAX_ERROR
 } PrepareResult;
 
-typedef enum {
+typedef enum
+{
   STATEMENT_INSERT,
   STATEMENT_SELECT
 } StatementType;
 
-typedef struct {
-  StatementType type; 
+typedef struct
+{
+  StatementType type;
+  Row row_to_insert;
 } Statement;
 
-MetaCommandResult do_meta_command(InputBuffer * input_buffer) {
-  if(strcasecmp(input_buffer->buffer, ".exit") == 0) {
+MetaCommandResult do_meta_command(InputBuffer *input_buffer)
+{
+  if (strcasecmp(input_buffer->buffer, ".exit") == 0)
+  {
     exit(EXIT_SUCCESS);
-  } else {
+  }
+  else
+  {
     return META_COMMAND_UNRECOGNIZED_COMMAND;
   }
 }
 
 // Our proverbial SQL compiler
-PrepareResult prepare_statement(InputBuffer * input_buffer, Statement * statement) {
+PrepareResult prepare_statement(InputBuffer *input_buffer, Statement *statement)
+{
   // Using strncmp as insert will be followed by data
-  if(strncmp(input_buffer->buffer, "insert", 6)) {
+  if (strncmp(input_buffer->buffer, "insert", 6) == 0)
+  {
     statement->type = STATEMENT_INSERT;
+    int args_assigned = sscanf(input_buffer->buffer, "insert %d %s %s", &(statement->row_to_insert.id), statement->row_to_insert.username, statement->row_to_insert.email);
+    if (args_assigned < 3)
+    {
+      return PREPARE_SYNTAX_ERROR;
+    }
     return PREPARE_SUCCESS;
   }
-  if(strcmp(input_buffer->buffer, "select")) {
+  if (strcmp(input_buffer->buffer, "select"))
+  {
     statement->type = STATEMENT_SELECT;
     return PREPARE_SUCCESS;
   }
-  
+
   return PREPARE_UNRECOGNISED_STATEMENT;
 }
 
-void execute_statement(Statement * statement) {
-  switch(statement->type){
-    case (STATEMENT_INSERT):
-      printf("This is where we do an insert");
-      break;
-    case (STATEMENT_SELECT):
-      printf("This is where we do a select");
+void execute_statement(Statement *statement)
+{
+  switch (statement->type)
+  {
+  case (STATEMENT_INSERT):
+    printf("This is where we do an insert \n");
+    break;
+  case (STATEMENT_SELECT):
+    printf("This is where we do a select \n");
   }
 }
 
@@ -106,28 +127,34 @@ int main(int argc, char *argv[])
     print_prompt();
     read_input(input_buffer);
 
-    if(input_buffer->buffer[0] == '.') {
-      switch(do_meta_command(input_buffer)) {
-        case (META_COMMAND_SUCCESS):
-          continue;
-        case (META_COMMAND_UNRECOGNIZED_COMMAND):
-          printf("Command unregornised %s \n",  input_buffer->buffer);
-          continue;
+    if (input_buffer->buffer[0] == '.')
+    {
+      switch (do_meta_command(input_buffer))
+      {
+      case (META_COMMAND_SUCCESS):
+        continue;
+      case (META_COMMAND_UNRECOGNIZED_COMMAND):
+        printf("Command unregornised %s \n", input_buffer->buffer);
+        continue;
       }
     }
 
     Statement statement;
-    switch (prepare_statement(input_buffer, &statement)) {
-      case (PREPARE_SUCCESS):
-        break;
-      case (PREPARE_UNRECOGNISED_STATEMENT):
-        printf("Unrecognised keyword at start of %s. \n", input_buffer->buffer);
-        continue; 
+    switch (prepare_statement(input_buffer, &statement))
+    {
+    case (PREPARE_SUCCESS):
+      break;
+    case (PREPARE_UNRECOGNISED_STATEMENT):
+      printf("Unrecognised keyword at start of %s. \n", input_buffer->buffer);
+      continue;
+    case (PREPARE_SYNTAX_ERROR):
+      printf("Syntax error in %s. \n", input_buffer->buffer);
+      continue;
     }
 
     // Our proverbial virtual machine
     execute_statement(&statement);
     printf("Statement executed. \n");
   }
-      return 0;
+  return 0;
 }
