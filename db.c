@@ -105,21 +105,57 @@ PrepareResult prepare_statement(InputBuffer *input_buffer, Statement *statement)
   return PREPARE_UNRECOGNISED_STATEMENT;
 }
 
-void execute_statement(Statement *statement)
+ExecuteResult execute_insert(Statement* statement, Table* table) {
+  if(table->num_rows >= TABLE_MAX_ROWS){
+    return EXECUTE_TABLE_FULL;
+  }
+
+  Row *row_to_insert = &(statement->row_to_insert);
+  print_row(row_to_insert);
+  serialise_row(row_to_insert,row_slot(table, table->num_rows)); // Insert the next row
+  table->num_rows += 1;
+  return EXECUTE_SUCCESS;
+}
+
+ExecuteResult execute_select(Statement* statemene, Table* table) {
+  for(uint32_t j = 0; j < table->num_rows; j++){
+    void* row = row_slot(table,j);
+    deserialise_row(table, row);
+    print_row(row);
+  }
+  return EXECUTE_SUCCESS;
+}
+
+Table* new_table(){
+  Table* table = (Table*)malloc(sizeof(Table));
+  for(uint32_t i = 0; i <= TABLE_MAX_PAGES; i++) {
+    table->pages[i] = NULL;
+  }
+  return table;
+}
+
+void free_table(Table* table) {
+  for(uint32_t i = 0; i <= table->num_rows; i++){
+    free(table->pages[i]);
+  }
+  free(table);
+}
+
+ExecuteResult execute_statement(Table* table, Statement *statement)
 {
   switch (statement->type)
   {
   case (STATEMENT_INSERT):
-    printf("This is where we do an insert \n");
-    break;
+    return execute_insert(statement, table);
   case (STATEMENT_SELECT):
-    printf("This is where we do a select \n");
+    return execute_select(statement, table);
   }
 }
 
 int main(int argc, char *argv[])
 {
   InputBuffer *input_buffer = newInputBuffer();
+  Table* table = new_table();
 
   // REPL
   while (true)
@@ -148,13 +184,19 @@ int main(int argc, char *argv[])
       printf("Unrecognised keyword at start of %s. \n", input_buffer->buffer);
       continue;
     case (PREPARE_SYNTAX_ERROR):
-      printf("Syntax error in %s. \n", input_buffer->buffer);
+      printf("Could not parse statement \n");
       continue;
     }
 
     // Our proverbial virtual machine
-    execute_statement(&statement);
-    printf("Statement executed. \n");
+    switch(execute_statement(table, &statement)){
+      case (EXECUTE_SUCCESS):
+        printf("Executed \n");
+        break;
+      case (EXECUTE_TABLE_FULL):
+        printf("Error: Table full");
+        break;
+      }
   }
   return 0;
 }
