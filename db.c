@@ -96,7 +96,7 @@ PrepareResult prepare_statement(InputBuffer *input_buffer, Statement *statement)
     }
     return PREPARE_SUCCESS;
   }
-  if (strcmp(input_buffer->buffer, "select"))
+  if (strcmp(input_buffer->buffer, "select") == 0)
   {
     statement->type = STATEMENT_SELECT;
     return PREPARE_SUCCESS;
@@ -112,18 +112,18 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 
   Row *row_to_insert = &(statement->row_to_insert);
   print_row(row_to_insert);
-  serialise_row(row_to_insert,row_slot(table, 0)); // Insert the next row
-  // table->num_rows += 1;
+  serialise_row(row_to_insert,row_slot(table, table->num_rows)); // Insert the next row
+  table->num_rows += 1;
   return EXECUTE_SUCCESS;
 }
 
 ExecuteResult execute_select(Statement* statemene, Table* table) {
-  for(uint32_t j = 0; j <= table->num_rows; j++){
-    void* row = row_slot(table,j);
-    deserialise_row(table, row);
+  for(uint32_t j = 0; j < table->num_rows; j++){
+    Row *row;
+    void* location_in_table = row_slot(table,j);
+    deserialise_row(location_in_table, row);
     print_row(row);
   }
-  Row *data = table->pages[0];
   return EXECUTE_SUCCESS;
 }
 
@@ -132,6 +132,7 @@ Table* new_table(){
   for(uint32_t i = 0; i <= TABLE_MAX_PAGES; i++) {
     table->pages[i] = NULL;
   }
+  table->num_rows = 0;
   return table;
 }
 
