@@ -29,7 +29,9 @@ void* row_slot(Table *table, uint32_t row_num){
     }
     uint32_t row_offset = row_num % ROWS_PER_PAGE;
     uint32_t byte_offset = row_offset * ROW_SIZE; // Offset within the page
-    return page + byte_offset;
+    void* destination = page + byte_offset;
+    printf("nothing");
+    return destination;
 }
 
 void print_row(Row* row) {

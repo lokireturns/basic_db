@@ -112,17 +112,18 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 
   Row *row_to_insert = &(statement->row_to_insert);
   print_row(row_to_insert);
-  serialise_row(row_to_insert,row_slot(table, table->num_rows)); // Insert the next row
-  table->num_rows += 1;
+  serialise_row(row_to_insert,row_slot(table, 0)); // Insert the next row
+  // table->num_rows += 1;
   return EXECUTE_SUCCESS;
 }
 
 ExecuteResult execute_select(Statement* statemene, Table* table) {
-  for(uint32_t j = 0; j < table->num_rows; j++){
+  for(uint32_t j = 0; j <= table->num_rows; j++){
     void* row = row_slot(table,j);
     deserialise_row(table, row);
     print_row(row);
   }
+  Row *data = table->pages[0];
   return EXECUTE_SUCCESS;
 }
 

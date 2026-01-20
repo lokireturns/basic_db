@@ -13,6 +13,5 @@
       "externalConsole": true,
       "MIMode": "lldb",
     }
-  ],
-  "preLaunchTask": "Build DB with Debug Symbols",
+  ]
 }
