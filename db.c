@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
       case (META_COMMAND_SUCCESS):
         continue;
       case (META_COMMAND_UNRECOGNIZED_COMMAND):
-        printf("Command unregornised %s \n", input_buffer->buffer);
+        printf("Command unrecognised %s \n", input_buffer->buffer);
         continue;
       }
     }
