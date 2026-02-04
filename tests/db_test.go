@@ -44,7 +44,6 @@ func runScript(commands []string) []string {
 func TestInsertsAndRetrievesRow(t *testing.T) {
 	result := runScript([]string{
 		"insert 1 user1 person1@example.com",
-		// "select *",
 		".exit",
 	})
 
